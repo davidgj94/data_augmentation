@@ -82,8 +82,8 @@ def random_crop(img, bbox_size):
 	h, w = img.shape[:2]
 	x_max = w - bbox_size[0]
 	y_max = h - bbox_size[1]
-	top_borders_x = np.random.uniform(0, x_max, 1).astype(int)
-	top_borders_y = np.random.uniform(0, y_max, 1).astype(int)
+	top_border_x = np.random.uniform(0, x_max, 1).astype(int)
+	top_border_y = np.random.uniform(0, y_max, 1).astype(int)
 	top_border = zip(top_border_x, top_border_y)[0]
 	cropped_img = crop(img, top_border, bbox_size)
 
