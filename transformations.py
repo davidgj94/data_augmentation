@@ -6,36 +6,67 @@ import os.path
 import pdb
 import matplotlib.pyplot as plt
 
-def rotate_img(mat, angle, bbox_size):
-  # angle in degrees
+def rotate_img(mat, angle, bbox_size, is_mask=False):
 
-  height, width = mat.shape[:2]
-  image_center = (width/2, height/2)
+	height, width = mat.shape[:2]
+	image_center = (width/2, height/2)
 
-  rotation_mat = cv2.getRotationMatrix2D(image_center, angle, 1.)
+	rotation_mat = cv2.getRotationMatrix2D(image_center, angle, 1.)
 
-  abs_cos = abs(rotation_mat[0,0])
-  abs_sin = abs(rotation_mat[0,1])
+	abs_cos = abs(rotation_mat[0,0])
+	abs_sin = abs(rotation_mat[0,1])
 
-  bound_w = int(height * abs_sin + width * abs_cos)
-  bound_h = int(height * abs_cos + width * abs_sin)
+	bound_w = int(height * abs_sin + width * abs_cos)
+	bound_h = int(height * abs_cos + width * abs_sin)
+	bound_size = (bound_w, bound_h)
 
-  rotation_mat[0, 2] += bound_w/2 - image_center[0]
-  rotation_mat[1, 2] += bound_h/2 - image_center[1]
+	rotation_mat[0, 2] += bound_w/2 - image_center[0]
+	rotation_mat[1, 2] += bound_h/2 - image_center[1]
 
-  bound_size = (bound_w, bound_h)
-  rotated_mat = cv2.warpAffine(mat, rotation_mat, bound_size, flags=cv2.INTER_AREA)
-  rotated_mask = cv2.warpAffine(np.zeros((height, width), dtype=np.uint8), rotation_mat, bound_size, flags=cv2.INTER_NEAREST, borderValue=255)
+	if is_mask:
+		rotated_mat = cv2.warpAffine(mat, rotation_mat, bound_size, flags=cv2.INTER_NEAREST, borderValue=255)
+	else:
+		rotated_mat = cv2.warpAffine(mat, rotation_mat, bound_size, flags=cv2.INTER_AREA, borderValue=0)
 
-  rotated_center = (bound_w/2, bound_h/2)
+	rotated_center = (bound_w/2, bound_h/2)
 
-  x_limits = np.array((-bbox_size[0]/2, bbox_size[0]/2 + bbox_size[0]%2 - 1)) + rotated_center[0]
-  y_limits = np.array((-bbox_size[1]/2, bbox_size[1]/2 + bbox_size[1]%2 - 1)) + rotated_center[1]
+	x_limits = np.array((-bbox_size[0]/2, bbox_size[0]/2 + bbox_size[0]%2 - 1)) + rotated_center[0]
+	y_limits = np.array((-bbox_size[1]/2, bbox_size[1]/2 + bbox_size[1]%2 - 1)) + rotated_center[1]
 
-  bbox = rotated_mat[y_limits[0]:y_limits[1], x_limits[0]:x_limits[1]]
-  bbox_mask = rotated_mask[y_limits[0]:y_limits[1], x_limits[0]:x_limits[1]]
+	bbox = rotated_mat[y_limits[0]:y_limits[1], x_limits[0]:x_limits[1]]
+
+	return bbox
+
+# def rotate_img(mat, angle, bbox_size):
+#   # angle in degrees
+
+#   height, width = mat.shape[:2]
+#   image_center = (width/2, height/2)
+
+#   rotation_mat = cv2.getRotationMatrix2D(image_center, angle, 1.)
+
+#   abs_cos = abs(rotation_mat[0,0])
+#   abs_sin = abs(rotation_mat[0,1])
+
+#   bound_w = int(height * abs_sin + width * abs_cos)
+#   bound_h = int(height * abs_cos + width * abs_sin)
+
+#   rotation_mat[0, 2] += bound_w/2 - image_center[0]
+#   rotation_mat[1, 2] += bound_h/2 - image_center[1]
+
+#   bound_size = (bound_w, bound_h)
+#   rotated_mat = cv2.warpAffine(mat, rotation_mat, bound_size, flags=cv2.INTER_AREA)
+#   rotated_mask = cv2.warpAffine(np.zeros((height, width), dtype=np.uint8), rotation_mat, bound_size, flags=cv2.INTER_NEAREST, borderValue=255)
+
+#   rotated_center = (bound_w/2, bound_h/2)
+
+#   x_limits = np.array((-bbox_size[0]/2, bbox_size[0]/2 + bbox_size[0]%2 - 1)) + rotated_center[0]
+#   y_limits = np.array((-bbox_size[1]/2, bbox_size[1]/2 + bbox_size[1]%2 - 1)) + rotated_center[1]
+
+#   bbox = rotated_mat[y_limits[0]:y_limits[1], x_limits[0]:x_limits[1]]
+#   bbox_mask = rotated_mask[y_limits[0]:y_limits[1], x_limits[0]:x_limits[1]]
   
-  return bbox, bbox_mask
+#   return bbox, bbox_mask
 
 def crop(img, top_border, bbox_size):
 
@@ -61,7 +92,7 @@ def random_crop(img, bbox_size):
 
 def make_parser():
     p = ArgumentParser()
-    p.add_argument('--img_path', type=str, default="test/img.png")
+    p.add_argument('--img_path', type=str, default="tests_transformations/img.png")
     p.add_argument('--save_path', type=str, default="tests_transformations/results")
     p.add_argument('--bbox_w', type=int, default=929)
     p.add_argument('--bbox_h', type=int, default=449)
@@ -85,7 +116,8 @@ if __name__ == "__main__":
 
 		angles = np.linspace(-10,10,20)
 		for angle in angles:
-			bbox_img, bbox_mask = rotate_img(img, angle, bbox_size)
+			bbox_img = rotate_img(img, angle, bbox_size)
+			bbox_mask = rotate_img(np.zeros(tuple(img.shape[:2]), dtype=np.uint8), angle, bbox_size, is_mask=True)
 			cv2.imwrite(os.path.join(args.save_path, "rotation", "imgs", "rotation_{}.png").format(int(angle)), bbox_img)
 			cv2.imwrite(os.path.join(args.save_path, "rotation", "masks", "rotation_{}.png").format(int(angle)), bbox_mask)
 	
