@@ -109,7 +109,8 @@ class DataAugLayer(caffe.Layer):
             self.idx += 1
         
     def sample_illuminant(self):
-        idx_illu = np.random.randint(0, len(self.illuminants)-1)
+        #idx_illu = np.random.randint(0, len(self.illuminants)-1)
+        idx_illu = self.illuminants.shape[0] - 1
         illuminant = self.illuminants[idx_illu, :].flatten()
         if self.testing:
             print ">> idx_illu: {}".format(idx_illu)
