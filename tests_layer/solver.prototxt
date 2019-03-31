@@ -1,4 +1,4 @@
-train_net: "/home/davidgj/projects/data_augmentation/tests_layer/train.prototxt"
+train_net: "/home/david/projects/data_augmentation/tests_layer/train.prototxt"
 
 lr_policy: "poly"
 power: 0.9
@@ -11,5 +11,5 @@ momentum: 0.9
 weight_decay: 0.0005
 
 snapshot: 112
-snapshot_prefix: "/home/davidgj/projects/data_augmentation/tests_layer/snapshot"
+snapshot_prefix: "/home/david/projects/data_augmentation/tests_layer/snapshot"
 solver_mode: GPU

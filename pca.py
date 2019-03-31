@@ -85,7 +85,7 @@ def compute_pc_v2(img_paths, testing=False):
 	return (pca * 255.0)
 
 
-def apply_pca_aug_v2(img, pca, sigma=0.5, testing=False):
+def apply_pca_aug_v2(img, pca, sigma=1, testing=False):
 	perturb = (pca * np.random.randn(3) * sigma).sum(axis=1)
 	perturb = perturb[np.newaxis, np.newaxis, :]
 	new_img = img + perturb

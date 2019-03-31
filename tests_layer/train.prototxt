@@ -6,6 +6,6 @@ layer {
   python_param {
     module: "data_aug_layer"
     layer: "DataAugLayer"
-    param_str: "{\'train_list_path\': \'tests_layer/train.txt\', \'illuminants_path\': \'tests_layer/illuminants.npy\', \'batch_size\': 1,  \'mean\': (97.778, 116.764, 140.960), \'crop_width\': 929, \'crop_height\': 449, \'sigma\': 7, \'testing\': 'True'}"
+    param_str: "{\'train_list_path\': \'tests_layer/train.txt\', \'illuminants_path\': \'tests_layer/illuminants.npy\', \'batch_size\': 2,  \'mean\': (97.778, 116.764, 140.960), \'crop_width\': 929, \'crop_height\': 449, \'sigma\': 7, \'testing\': 'True'}"
   }
 }

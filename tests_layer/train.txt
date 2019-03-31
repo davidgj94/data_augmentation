@@ -1,2 +1,5 @@
-/home/davidgj/projects/videos_deeplab/white_images/009-APR-20-2-90_2:12.png /home/davidgj/projects/videos_deeplab/masks/009-APR-20-2-90_2:12.png
-/home/davidgj/projects/videos_deeplab/white_images/009-APR-20-2-90_0:12.png /home/davidgj/projects/videos_deeplab/masks/009-APR-20-2-90_0:12.png
+/home/davidgj/projects/videos_deeplab/white_images/009-APR-20-2-90_2_12.png /home/davidgj/projects/videos_deeplab/masks/009-APR-20-2-90_2_12.png
+/home/davidgj/projects/videos_deeplab/white_images/009-APR-20-2-90_0_12.png /home/davidgj/projects/videos_deeplab/masks/009-APR-20-2-90_0_12.png
+/home/davidgj/projects/videos_deeplab/white_images/009-APR-20-2-90_1_42.png /home/davidgj/projects/videos_deeplab/masks/009-APR-20-2-90_1_42.png
+/home/davidgj/projects/videos_deeplab/white_images/009-APR-20-2-90_0_14.png /home/davidgj/projects/videos_deeplab/masks/009-APR-20-2-90_0_14.png
+/home/davidgj/projects/videos_deeplab/white_images/009-APR-20-2-90_1_10.png /home/davidgj/projects/videos_deeplab/masks/009-APR-20-2-90_1_10.png

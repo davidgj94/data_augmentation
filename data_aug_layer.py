@@ -21,11 +21,13 @@ class DataAugLayer(caffe.Layer):
         train_list_path = params['train_list_path']
         self.train_list = np.loadtxt(train_list_path, dtype=str)
 
-        illuminants_path = params['illuminants_path']
-        self.illuminants = np.load(illuminants_path)
+        illuminants_path = params.get('illuminants_path', None)
+        if illuminants_path is not None:
+            self.illuminants = np.load(illuminants_path)
+        else:
+            raise Exception("Illuminants path missing.")
 
         self.batch_size = int(params['batch_size'])
-        self.batches = self.create_batches(self.train_list, self.batch_size)
 
         crop_width = int(params['crop_width'])
         crop_height = int(params['crop_height'])
@@ -38,7 +40,6 @@ class DataAugLayer(caffe.Layer):
 
         self.testing = params.get('testing', False)
 
-        self.test_dir = params.get('test_dir', os.path.join("tests_layer","results"))
 
         if self.testing:
 
@@ -49,9 +50,9 @@ class DataAugLayer(caffe.Layer):
             print ">> crop_size: {}".format(self.crop_size)
             print ">> sigma: {}".format(self.sigma)
             print ">> mean: {}".format(self.mean)
+            print
             #pdb.set_trace()
 
-        np.random.shuffle(self.illuminants)
         np.random.shuffle(self.train_list)
 
         # two tops: data and label
@@ -61,59 +62,48 @@ class DataAugLayer(caffe.Layer):
         if len(bottom) != 0:
             raise Exception("Do not define a bottom.")
 
-    
-    def create_batches(self, train_list, batch_size):
-
-        np.random.shuffle(train_list)
-        num_train_imgs = train_list.shape[0]
-        num_batches = num_train_imgs / batch_size + num_train_imgs % batch_size
-        batches = np.array_split(train_list, num_batches)
-
-        if batches[-1].shape[0] < batch_size:
-            batches.pop(-1)
-
-        return batches
-
 
     def reshape(self, bottom, top):
         
-        if self.testing:
-            if os.path.exists(self.test_dir):
-                shutil.rmtree(self.test_dir, ignore_errors=True)
-            os.makedirs(self.test_dir)
 
         self.batch_img = np.zeros((self.batch_size, 3, self.crop_size[1], self.crop_size[0]), dtype=np.float32)
         self.batch_label = np.zeros((self.batch_size, 1, self.crop_size[1], self.crop_size[0]), dtype=np.float32)
 
         for i in np.arange(self.batch_size):
 
-            img_path = self.batches[self.idx][i, 0]
-            label_path = self.batches[self.idx][i, 1]
+            img_path = self.train_list[self.idx, 0]
+            label_path = self.train_list[self.idx, 1]
+
+            if self.testing:
+                img_name = os.path.basename(img_path)
+                print ">> Image {}: {}".format(i, img_name)
+
             img, label = self.load_image_label(img_path, label_path)
             self.batch_img[i, ...] = img
             self.batch_label[i, ...] = label
 
+            if self.idx == len(self.train_list) - 1:
+                self.idx = 0
+                np.random.shuffle(self.train_list)
+            else:
+                self.idx += 1
+
         top[0].reshape(*self.batch_img.shape)
         top[1].reshape(*self.batch_label.shape)
 
-    
+
     def forward(self, bottom, top):
 
         top[0].data[...] = self.batch_img
         top[1].data[...] = self.batch_label
 
-        if self.idx == len(self.batches) - 1:
-            self.idx = 0
-            self.batches = self.create_batches(self.train_list, self.batch_size)
-        else:
-            self.idx += 1
+
         
     def sample_illuminant(self):
-        #idx_illu = np.random.randint(0, len(self.illuminants)-1)
-        idx_illu = self.illuminants.shape[0] - 1
+
+        idx_illu = np.random.randint(0, len(self.illuminants)-1)
         illuminant = self.illuminants[idx_illu, :].flatten()
         if self.testing:
-            print ">> idx_illu: {}".format(idx_illu)
             print ">> illu_value: {}".format(illuminant)
         return illuminant
 
@@ -128,8 +118,9 @@ class DataAugLayer(caffe.Layer):
         label = cv2.imread(label_path)[...,0]
 
         if self.testing:
-            vis_img = vis.vis_seg(white_img.astype(np.uint8), label, vis.make_palette(20))
-            cv2.imwrite(os.path.join(self.test_dir, "white_img.png"), vis_img)
+            plt.figure()
+            plt.imshow(white_img[...,::-1])
+            plt.title("White Image")
 
         flip_op = np.random.choice([-1,0,1])
         white_img = cv2.flip(white_img, flip_op)
@@ -137,7 +128,9 @@ class DataAugLayer(caffe.Layer):
 
         if self.testing:
             vis_img = vis.vis_seg(white_img.astype(np.uint8), label, vis.make_palette(20))
-            cv2.imwrite(os.path.join(self.test_dir, "flipped_img_{}.png".format(flip_op)), vis_img)
+            plt.figure()
+            plt.imshow(vis_img[...,::-1])
+            plt.title("Flipped {} Image".format(flip_op))
 
         if np.random.rand() < 0.5:
 
@@ -146,7 +139,9 @@ class DataAugLayer(caffe.Layer):
 
             if self.testing:
                 vis_img = vis.vis_seg(white_img.astype(np.uint8), label, vis.make_palette(20))
-                cv2.imwrite(os.path.join(self.test_dir, "img_cropped.png"), vis_img)
+                plt.figure()
+                plt.imshow(vis_img[...,::-1])
+                plt.title("Cropped Image")
 
         else:
 
@@ -158,15 +153,21 @@ class DataAugLayer(caffe.Layer):
                 label_vis = label.copy()
                 label_vis[label_vis == 255] = 5
                 vis_img = vis.vis_seg(white_img.astype(np.uint8), label_vis, vis.make_palette(20))
-                cv2.imwrite(os.path.join(self.test_dir, "img_rotated_{}.png".format(angle)), vis_img)
-
+                plt.figure()
+                plt.imshow(vis_img[...,::-1])
+                plt.title("Rotated Image_{}".format(int(angle)))
 
         illuminant = self.sample_illuminant()
-        img = illu.apply_illuminant(white_img.astype(np.float32), illuminant)
+        img = illu.apply_illuminant(white_img, illuminant)
 
         if self.testing:
-            cv2.imwrite(os.path.join(self.test_dir, "img_illu.png"), img)
+            plt.figure()
+            plt.imshow(img[...,::-1])
+            plt.title("New Image")
+            plt.show()
+            print 
 
+        img = img.astype(float)
         img -= self.mean
         
         img = img.transpose((2,0,1))
