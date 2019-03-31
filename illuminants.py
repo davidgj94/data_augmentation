@@ -20,8 +20,6 @@ def make_parser():
 	
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--imgs_dir', type=str, default="tests_illuminants/imgs")
-	parser.add_argument('--results_dir', type=str, default="tests_illuminants/results")
-	parser.add_argument('--illuminants_path', type=str)
 	return parser
 
 def compute_mink_norm(v, p=6):
@@ -54,58 +52,46 @@ def compute_illuminant(img):
 
 	return white_img, (white_B, white_G, white_R)
 
+def test_illuminants(imgs):
+
+	for i in range(len(imgs)):
+
+		img1 = imgs[i]
+		white_img, _ = compute_illuminant(img1)
+
+		for j in range(len(imgs)):
+			
+			if i != j:
+
+				img2 = imgs[j]
+				_, illuminant = compute_illuminant(img2)
+
+				new_img = apply_illuminant(white_img, illuminant)
+
+				plt.figure()
+				plt.imshow(img1[...,::-1])
+				plt.title("Original Image")
+
+				plt.figure()
+				plt.imshow(new_img[...,::-1].astype(np.uint8))
+				plt.title("New Image")
+
+				plt.figure()
+				plt.imshow(img2[...,::-1])
+				plt.title("Illuminant Image")
+				plt.show()
+
+
 if __name__ == "__main__":
 
 	parser = make_parser()
 	args = parser.parse_args()
 
-	if args.illuminants_path is not None:
+	imgs = []
 
-		illuminants = np.load(args.illuminants_path)
-		indices = range(illuminants.shape[0])
+	for glob in Path(args.imgs_dir).glob("*.png"):
 
-		for glob in Path(args.imgs_dir).glob("*"):
-
-			img_name = glob.parts[-1]
-			img_path = os.path.join(args.imgs_dir, img_name)
-			img = cv2.imread(img_path)
-			white_img, _ = compute_illuminant(img, np.ones(img.shape, dtype=bool)[...,0])
-			random.shuffle(indices)
-			idx = indices[0]
-			new_img = apply_illuminant(white_img, illuminants[idx,:].flatten())
-			#pdb.set_trace()
-			plt.figure()
-			plt.imshow(img[...,::-1])
-			plt.title("Original")
-			plt.figure()
-			plt.imshow(new_img[...,::-1].astype(np.uint8))
-			plt.title("New")
-			plt.show()
-
-
-	else:
-
-		illuminants_list = []
-		img_list = []
-		img_names_list = []
-
-		for glob in Path(args.imgs_dir).glob("*"):
-
-			img_name = glob.parts[-1]
-			img_path = os.path.join(args.imgs_dir, img_name)
-
-			img = cv2.imread(img_path)
-			white_img, illuminant = compute_illuminant(img)
-
-			illuminants_list.append(illuminant)
-			img_list.append(white_img)
-			img_names_list.append(img_name)
-
+		img = cv2.imread(str(glob))
+		imgs.append(img)
 		
-		for idx, img in enumerate(img_list):
-			indices = range(0,len(img_list))
-			indices.remove(idx)
-			random.shuffle(indices)
-			_idx = indices[0]
-			new_img = apply_illuminant(img, illuminants_list[_idx])
-			cv2.imwrite(os.path.join(args.results_dir, "{}__{}.png".format(img_names_list[idx], img_names_list[_idx])), new_img)
+	test_illuminants(imgs)
